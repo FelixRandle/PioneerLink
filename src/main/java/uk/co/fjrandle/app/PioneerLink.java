@@ -28,18 +28,6 @@ class PioneerLink {
             }
         });
 
-        VirtualCdj.getInstance().addUpdateListener(new DeviceUpdateListener() {
-            @Override
-            public void received(DeviceUpdate deviceUpdate) {
-
-                TrackMetadata metadata = MetadataFinder.getInstance().getLatestMetadataFor(deviceUpdate);
-                System.out.println(metadata.getTitle());
-                System.out.println("time:");
-                TrackPositionUpdate time = TimeFinder.getInstance().getLatestPositionFor(deviceUpdate);
-                System.out.println(time.milliseconds);
-            }
-        });
-
         VirtualCdj.getInstance().addMasterListener(new MasterListener() {
             @Override
             public void masterChanged(DeviceUpdate update) {
@@ -57,5 +45,9 @@ class PioneerLink {
             }
         });
 
+    }
+
+    public void addTrackListener(DeviceUpdateListener listener) {
+        VirtualCdj.getInstance().addUpdateListener(listener);
     }
 }

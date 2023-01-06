@@ -1,5 +1,14 @@
 package uk.co.fjrandle.app;
 
+import org.deepsymmetry.beatlink.DeviceUpdate;
+import org.deepsymmetry.beatlink.DeviceUpdateListener;
+import org.deepsymmetry.beatlink.data.MetadataFinder;
+import org.deepsymmetry.beatlink.data.TimeFinder;
+import org.deepsymmetry.beatlink.data.TrackMetadata;
+import org.deepsymmetry.beatlink.data.TrackPositionUpdate;
+
+import javax.sound.midi.InvalidMidiDataException;
+import javax.sound.midi.MidiUnavailableException;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -8,7 +17,7 @@ import java.util.Vector;
 
 public class App {
     public static void main(String[] args) throws Exception {
-//        PioneerLink link = new PioneerLink();
+        PioneerLink link = new PioneerLink();
         MIDIOutput midi = new MIDIOutput();
 
         System.out.println(midi.getAvailableDevices());
@@ -28,7 +37,11 @@ public class App {
 
         JButton b=new JButton("Open Device");//creating instance of JButton
         b.addActionListener(e -> {
-            midi.openDevice((String) jComboBox.getSelectedItem());
+            try {
+                midi.openDevice((String) jComboBox.getSelectedItem());
+            } catch (MidiUnavailableException ex) {
+                throw new RuntimeException(ex);
+            }
         });
 
         constraints.gridx = 1;
@@ -36,6 +49,23 @@ public class App {
 
         frame.pack();
         frame.setVisible(true);
+
+        link.addTrackListener(new DeviceUpdateListener() {
+            @Override
+            public void received(DeviceUpdate deviceUpdate) {
+
+                TrackMetadata metadata = MetadataFinder.getInstance().getLatestMetadataFor(deviceUpdate);
+//                System.out.println(metadata.getTitle());
+//                System.out.println("time:");
+                TrackPositionUpdate time = TimeFinder.getInstance().getLatestPositionFor(deviceUpdate);
+//                System.out.println(time.milliseconds);
+
+                Timecode t = new Timecode(time.milliseconds);
+
+
+                midi.sendTimecode(t);
+            }
+        });
     }
 }
 
