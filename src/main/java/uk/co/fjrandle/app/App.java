@@ -16,8 +16,9 @@ import java.awt.event.ActionListener;
 import java.util.Vector;
 
 public class App {
+    private static boolean debug = true;
     public static void main(String[] args) throws Exception {
-        PioneerLink link = new PioneerLink();
+        PioneerLink link = new PioneerLink(debug);
         MIDIOutput midi = new MIDIOutput();
 
         System.out.println(midi.getAvailableDevices());
@@ -50,22 +51,36 @@ public class App {
         frame.pack();
         frame.setVisible(true);
 
-        link.addTrackListener(new DeviceUpdateListener() {
-            @Override
-            public void received(DeviceUpdate deviceUpdate) {
+        if (!debug) {
+            link.addTrackListener(new DeviceUpdateListener() {
+                @Override
+                public void received(DeviceUpdate deviceUpdate) {
 
-                TrackMetadata metadata = MetadataFinder.getInstance().getLatestMetadataFor(deviceUpdate);
+                    TrackMetadata metadata = MetadataFinder.getInstance().getLatestMetadataFor(deviceUpdate);
 //                System.out.println(metadata.getTitle());
 //                System.out.println("time:");
-                TrackPositionUpdate time = TimeFinder.getInstance().getLatestPositionFor(deviceUpdate);
+                    TrackPositionUpdate time = TimeFinder.getInstance().getLatestPositionFor(deviceUpdate);
 //                System.out.println(time.milliseconds);
 
-                Timecode t = new Timecode(time.milliseconds);
+                    Timecode t = new Timecode(time.milliseconds);
 
 
-                midi.sendTimecode(t);
-            }
-        });
+                    midi.sendTimecode(t);
+                }
+            });
+        } else {
+            System.out.println("adding debug");
+            link.addDebugListener(new DebugListener() {
+                @Override
+                public void received(long millis) {
+                    Timecode t = new Timecode(millis);
+
+                    midi.sendTimecode(t);
+                }
+            });
+        }
+
+
     }
 }
 

@@ -1,5 +1,6 @@
 package uk.co.fjrandle.app;
 
+import org.apache.maven.shared.utils.StringUtils;
 import ovh.stranck.javaTimecode.*;
 import ovh.stranck.javaTimecode.mtc.LTCGenerator;
 
@@ -52,9 +53,7 @@ class MIDIOutput {
 
             tp.setSpeed(1);
 
-            long start = System.currentTimeMillis();
-
-
+//            long start = System.currentTimeMillis();
 //            do {
 //                System.out.println("------");
 //                System.out.println(tp.getTimecode().toString());
@@ -84,9 +83,6 @@ class MIDIOutput {
 
         for (MidiDevice.Info device:
              allDevices) {
-            System.out.println(device.getName());
-            System.out.println(device.getDescription());
-            System.out.println("--------");
             if (device != null && device.getDescription().equals("External MIDI Port")) {
                 midiDevices.add(device);
             }
@@ -138,6 +134,9 @@ class MIDIOutput {
     }
 
     public void sendTimecode(Timecode t) {
+        if (this.device == null || !this.device.isOpen()) {
+            return;
+        }
         // Update full frame every second
         if (System.currentTimeMillis() - this.lastFullFrameTime > 5000) {
             System.out.println("Sent Full Frame");
@@ -145,7 +144,7 @@ class MIDIOutput {
             try {
                 msg.setMessage(MidiTimecode.timecodeToFullFrame(t), 10);
             } catch(InvalidMidiDataException e) {
-                System.err.println(e);
+                                                                                                    System.err.println(e);
             }
             this.receiver.send(msg, -1);
             this.lastFullFrameTime = System.currentTimeMillis();
@@ -155,6 +154,8 @@ class MIDIOutput {
                 System.out.println("Sent Quarter Frame # " + this.quarterFramePieceNumber);
 
                 byte messageData = MidiTimecode.timecodeToQuarterFrame(t, this.quarterFramePieceNumber);
+
+                System.out.println(StringUtils.leftPad(Integer.toBinaryString(messageData), 8, "0"));
                 ShortMessage msg = new ShortMessage();
                 try {
                     msg.setMessage(MIDI_TIME_CODE, messageData, 0);
@@ -167,6 +168,7 @@ class MIDIOutput {
                 if (this.quarterFramePieceNumber > 7) {
                     this.quarterFramePieceNumber = 0;
                 }
+
             }
         }
     }
@@ -202,35 +204,35 @@ class MidiTimecode {
         switch (pieceNumber) {
             // FRAME lsbits
             case 0:
-                data = (byte) (((byte) t.getFrames() & 0x0F) | 0b0000_1111);
+                data = (byte) ((t.getFrames() & 0x0F)  | 0b0000_0000);
                 break;
             // FRAME msbit
             case 1:
-                data = (byte) ((t.getFrames() >> 4) | 0b0001_0001);
+                data = (byte) ((t.getFrames() >> 4) | 0b0001_0000);
                 break;
             // SECONDS lsbits
             case 2:
-                data = (byte) ((t.getSeconds() & 0x0F) | 0b0010_1111);
+                data = (byte) ((t.getSeconds() & 0x0F) | 0b0010_0000);
                 break;
             // SECONDS msbits
             case 3:
-                data = (byte) ((t.getSeconds() >> 4) | 0b0011_0011);
+                data = (byte) ((t.getSeconds() >> 4) | 0b0011_0000);
                 break;
             // MINUTES lsbits
             case 4:
-                data = (byte) ((t.getMinutes() & 0x0F) | 0b0100_1111);
+                data = (byte) ((t.getMinutes() & 0x0F) | 0b0100_0000);
                 break;
             // MINUTES msbits
             case 5:
-                data = (byte) ((t.getMinutes() >> 4) | 0b0101_0011);
+                data = (byte) ((t.getMinutes() >> 4) | 0b0101_0000);
                 break;
             // HOURS lsbits
             case 6:
-                data = (byte) ((t.getHours() & 0x0F) | 0b0110_1111);
+                data = (byte) ((t.getHours() & 0x0F) | 0b0110_0000);
                 break;
             // HOURS msbits & Framerate
             case 7:
-                data = (byte) ((t.getHours() >> 4) | 0b0111_0111);
+                data = (byte) ((t.getHours() >> 4) | 0b0111_0000);
                 break;
             default:
                 data = 0;
