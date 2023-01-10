@@ -51,4 +51,14 @@ public class Timecode {
     public void add(Timecode t) {
         setTimeFromMillis(this.millis + t.millis);
     }
+
+    @Override
+    public String toString() {
+        return padTime(this.getHours())+":"+padTime(this.getMinutes())+":"+
+                padTime(this.getSeconds())+":"+padTime(this.getFrames());
+    }
+
+    private String padTime(int inputString) {
+        return String.format("%1$" + 2 + "s", inputString).replace(' ', '0');
+    }
 }

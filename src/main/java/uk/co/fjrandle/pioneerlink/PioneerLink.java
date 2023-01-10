@@ -3,14 +3,12 @@ package uk.co.fjrandle.pioneerlink;
 import org.deepsymmetry.beatlink.*;
 import org.deepsymmetry.beatlink.data.*;
 
-import java.util.Arrays;
 import java.util.Date;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 class PioneerLink {
-    private boolean debug;
-
     private Timer debugTimer;
     private final ScheduledExecutorService scheduler =
             Executors.newScheduledThreadPool(1);
@@ -53,18 +51,37 @@ class PioneerLink {
 //                System.out.println("Master player beat at " + new Date() + ": " + beat);
             }
         });
+
+        this.debugTimer = new Timer();
+        scheduler.scheduleAtFixedRate(this.debugTimer, 1, 5, TimeUnit.MILLISECONDS);
     }
 
     public void addTrackListener(DeviceUpdateListener listener) {
-        if(!this.debug) {
-            VirtualCdj.getInstance().addUpdateListener(listener);
-        } else {
-            System.out.println("In debug mode, ignoring TrackListener");
-        }
+        VirtualCdj.getInstance().addUpdateListener(listener);
     }
 
     public void addDebugListener(DebugListener listener) {
         this.debugTimer.setCallback(listener);
+    }
+
+    public void removeTrackListener(DeviceUpdateListener listener) {
+        VirtualCdj.getInstance().removeUpdateListener(listener);
+    }
+
+    public void removeDebugListener() {
+        this.debugTimer.removeCallback();
+    }
+
+    public void playInternalTimer() {
+        this.debugTimer.play();
+    }
+
+    public void pauseInternalTimer() {
+        this.debugTimer.pause();
+    }
+
+    public void resetInternalTimer() {
+        this.debugTimer.reset();
     }
 }
 
@@ -73,33 +90,47 @@ interface DebugListener {
 }
 
 class Timer implements Runnable {
-    private long timerStart = System.currentTimeMillis();
-    private long timerPauseTime;
-    private boolean playing;
+    private long timerStart;
+    private long elapsedTime = 0;
+    private boolean paused = true;
 
     private DebugListener callback;
 
     Timer() {
         this.timerStart = System.currentTimeMillis();
-        this.playing = false;
     }
 
     public void setCallback(DebugListener callback) {
         this.callback = callback;
     }
 
-    public void play() {
-        this.playing = true;
-        this.timerStart = System.currentTimeMillis();
+    public void removeCallback() {
+        this.callback = null;
     }
+
+    public void play() {
+        if (this.paused) {
+            this.timerStart = System.currentTimeMillis();
+        }
+        this.paused = false;
+    }
+
+    public void pause() {
+        if (!this.paused) {
+            this.elapsedTime = System.currentTimeMillis() - this.timerStart + this.elapsedTime;
+        }
+        this.paused = true;
+    }
+
+    public void reset() {
+        this.timerStart = System.currentTimeMillis();
+        this.elapsedTime = 0;
+    }
+
     public void run() {
-        try {
-            if (this.callback != null) {
-                this.callback.received(System.currentTimeMillis() - this.timerStart);
-            }
-        } catch ( Exception e) {
-            System.err.println("TIMER Error: " + e);
-            System.err.println(Arrays.toString(e.getStackTrace()));
+        if (this.callback != null) {
+            long returnTime = this.paused ? this.elapsedTime : System.currentTimeMillis() - this.timerStart + this.elapsedTime;
+            this.callback.received(returnTime);
         }
     }
 }

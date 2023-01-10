@@ -1,20 +1,19 @@
 package uk.co.fjrandle.pioneerlink;
 
 import com.alee.laf.WebLookAndFeel;
+import org.deepsymmetry.beatlink.DeviceUpdateListener;
 import org.deepsymmetry.beatlink.data.MetadataFinder;
 import org.deepsymmetry.beatlink.data.TimeFinder;
 import org.deepsymmetry.beatlink.data.TrackMetadata;
 import org.deepsymmetry.beatlink.data.TrackPositionUpdate;
 
 import javax.sound.midi.MidiUnavailableException;
-import javax.sound.sampled.LineUnavailableException;
 import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
 import java.awt.*;
 import java.util.HashMap;
 
 public class App {
-    private static boolean debug = false;
     private static String currentTrack = "";
 
     private static HashMap<String, Timecode> trackList = new HashMap<String, Timecode>() {
@@ -93,14 +92,17 @@ public class App {
 
         JButton play = new JButton("PLAY");
         internalTimerPanel.add(play, internalTimerConstraints);
+        play.addActionListener(e -> link.playInternalTimer());
 
         JButton pause = new JButton("PAUSE");
         internalTimerConstraints.gridx = 1;
         internalTimerPanel.add(pause, internalTimerConstraints);
+        pause.addActionListener(e -> link.pauseInternalTimer());
 
         JButton reset = new JButton("RESET");
         internalTimerConstraints.gridx = 2;
         internalTimerPanel.add(reset, internalTimerConstraints);
+        reset.addActionListener(e -> link.resetInternalTimer());
 
         // LINK PANEL
 
@@ -116,12 +118,20 @@ public class App {
 
         JTabbedPane tabs = new JTabbedPane();
         java.net.URL clockIconUrl = App.class.getResource("/icons/clock.png");
-        ImageIcon clockIcon = new ImageIcon(new ImageIcon(clockIconUrl).getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH));
-        tabs.addTab("Internal Timer", clockIcon, internalTimerPanel);
+        if (clockIconUrl != null) {
+            ImageIcon clockIcon = new ImageIcon(new ImageIcon(clockIconUrl).getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH));
+            tabs.addTab("Internal Timer", clockIcon, internalTimerPanel);
+        } else {
+            tabs.addTab("Internal Timer", internalTimerPanel);
+        }
 
         java.net.URL cdjIconUrl = App.class.getResource("/icons/cdj.png");
-        ImageIcon cdjIcon = new ImageIcon(new ImageIcon(cdjIconUrl).getImage().getScaledInstance(40, 30, Image.SCALE_SMOOTH));
-        tabs.addTab("Link", cdjIcon, linkPanel);
+        if (cdjIconUrl != null) {
+            ImageIcon cdjIcon = new ImageIcon(new ImageIcon(cdjIconUrl).getImage().getScaledInstance(40, 30, Image.SCALE_SMOOTH));
+            tabs.addTab("Link", cdjIcon, linkPanel);
+        } else {
+            tabs.addTab("Link", linkPanel);
+        }
 
         constraints.gridx = 0;
         constraints.gridy = 1;
@@ -131,46 +141,50 @@ public class App {
 
         pane.add(tabs, constraints);
 
-        tabs.addChangeListener(e -> {
-            System.out.println(e.toString());
-            System.out.println(tabs.getSelectedIndex());
-        });
+        DeviceUpdateListener linkListener = deviceUpdate -> {
+            TrackMetadata metadata = MetadataFinder.getInstance().getLatestMetadataFor(deviceUpdate);
+            if (!metadata.getTitle().equals(App.currentTrack)) {
+                App.currentTrack = metadata.getTitle();
+                System.out.println("Song changed to: " + App.currentTrack);
+                currentTrackLabel.setText(App.currentTrack);
+                metadata.getArtworkId();
+            }
+            TrackPositionUpdate time = TimeFinder.getInstance().getLatestPositionFor(deviceUpdate);
 
+            Timecode t = new Timecode(time.milliseconds);
+
+            if (App.trackList.containsKey(App.currentTrack)) {
+                t.add(App.trackList.get(App.currentTrack));
+            }
+
+            midi.sendTimecode(t, true); //TODO: Force update when DJ is doing weird shit
+        };
+
+        DebugListener timerListener = millis -> {
+            Timecode t = new Timecode(millis);
+
+            localTime.setText(t.toString());
+            midi.sendTimecode(t, false);
+        };
+
+        tabs.addChangeListener(e -> {
+            if (tabs.getSelectedIndex() == 1) {
+                // Switch from internal timer to Pioneer Link
+                link.removeDebugListener();
+                link.addTrackListener(linkListener);
+            } else {
+                // Switch from Pioneer Link to Internal Timer
+                link.removeTrackListener(linkListener);
+                link.addDebugListener(timerListener);
+            }
+        });
 
         frame.pack();
         frame.setVisible(true);
 
         // Link listeners.
 
-        if (!debug) {
-            link.addTrackListener(deviceUpdate -> {
-
-
-                TrackMetadata metadata = MetadataFinder.getInstance().getLatestMetadataFor(deviceUpdate);
-                if (!metadata.getTitle().equals(App.currentTrack)) {
-                    App.currentTrack = metadata.getTitle();
-                    System.out.println("Song changed to: " + App.currentTrack);
-                    currentTrackLabel.setText(App.currentTrack);
-                    metadata.getArtworkId();
-                }
-                TrackPositionUpdate time = TimeFinder.getInstance().getLatestPositionFor(deviceUpdate);
-
-                Timecode t = new Timecode(time.milliseconds);
-
-                if (App.trackList.containsKey(App.currentTrack)) {
-                    t.add(App.trackList.get(App.currentTrack));
-                }
-
-                midi.sendTimecode(t, true); //TODO: Force update when DJ is doing weird shit
-            });
-        } else {
-            System.out.println("adding debug");
-            link.addDebugListener(millis -> {
-                Timecode t = new Timecode(millis);
-
-                midi.sendTimecode(t, false);
-            });
-        }
+       link.addDebugListener(timerListener);
     }
 }
 

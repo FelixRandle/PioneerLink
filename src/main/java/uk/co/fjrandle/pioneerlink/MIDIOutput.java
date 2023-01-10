@@ -1,9 +1,6 @@
 package uk.co.fjrandle.pioneerlink;
 
-import org.apache.maven.shared.utils.StringUtils;
-
 import javax.sound.midi.*;
-import javax.sound.sampled.LineUnavailableException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,7 +19,7 @@ class MIDIOutput {
     private long lastQuarterFrameTime = System.currentTimeMillis();
     private int quarterFramePieceNumber = 0;
 
-    public static void main(String[] args) throws InvalidMidiDataException, LineUnavailableException, MidiUnavailableException {
+    public static void main(String[] args) throws InvalidMidiDataException, MidiUnavailableException {
         MidiDevice.Info[] midiDevices = MidiSystem.getMidiDeviceInfo();
 
         MidiDevice device = null;
@@ -128,8 +125,6 @@ class MIDIOutput {
                 System.out.println("Sent Quarter Frame # " + this.quarterFramePieceNumber);
 
                 byte messageData = MidiTimecode.timecodeToQuarterFrame(t, this.quarterFramePieceNumber);
-
-                System.out.println(StringUtils.leftPad(Integer.toBinaryString(messageData), 8, "0"));
                 ShortMessage msg = new ShortMessage();
                 try {
                     msg.setMessage(MIDI_TIME_CODE, messageData, 0);
