@@ -2,12 +2,14 @@ package uk.co.fjrandle.app;
 
 public class Timecode {
     private int hours, minutes, seconds, frames;
+    private long millis;
 
     Timecode(long millis) {
         this.setTimeFromMillis(millis);
     }
 
     public void setTimeFromMillis(long millis) {
+        this.millis = millis;
         this.hours = (int) (millis / (1000 * 60 * 60)) % 24;
         this.minutes = (int) (millis / (1000 * 60)) % 60;
         this.seconds = (int) (millis / 1000) % 60;
@@ -44,5 +46,9 @@ public class Timecode {
 
     public void setFrames(int frames) {
         this.frames = frames;
+    }
+
+    public void add(Timecode t) {
+        setTimeFromMillis(this.millis + t.millis);
     }
 }

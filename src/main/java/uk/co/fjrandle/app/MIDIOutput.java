@@ -1,12 +1,9 @@
 package uk.co.fjrandle.app;
 
 import org.apache.maven.shared.utils.StringUtils;
-import ovh.stranck.javaTimecode.*;
-import ovh.stranck.javaTimecode.mtc.LTCGenerator;
 
 import javax.sound.midi.*;
 import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.Mixer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -45,32 +42,19 @@ class MIDIOutput {
             device.open();
             Receiver receiver = device.getReceiver();
 
-            Mixer m = Utils.getMixer("Speaker/HP");
-            LTCGenerator ltc = new LTCGenerator(m, 48000);
-            TimecodePlayer tp = ltc.getTimecodePlayer();
+            // Send Test Message
 
-            ltc.start();
-
-            tp.setSpeed(1);
-
-//            long start = System.currentTimeMillis();
-//            do {
-//                System.out.println("------");
-//                System.out.println(tp.getTimecode().toString());
-//                SysexMessage msg = new SysexMessage();
-//                msg.setMessage(MidiTimecode.timecodeToFullFrame(tp.getTimecode()), 10);
-//                receiver.send(msg, -1);
-//                System.out.println("------");
-//            } while (System.currentTimeMillis() - start < 2000);
-
-            tp.pause();
-            ltc.stop();
+            int channel = 0;
+            int note = 60;
+            int velocity = 93;
 
             ShortMessage myMsg = new ShortMessage();
-            myMsg.setMessage(ShortMessage.NOTE_ON, 0, 60, 93);
+            myMsg.setMessage(ShortMessage.NOTE_ON, channel, note, velocity);
             long timeStamp = -1;
 
             receiver.send(myMsg, timeStamp);
+
+            myMsg.setMessage(ShortMessage.NOTE_OFF, channel, note, velocity);
 
             device.close();
         } else {
@@ -89,17 +73,6 @@ class MIDIOutput {
         }
 
         selectedDevice = midiDevices.get(0);
-//        for (MidiDevice.Info info:
-//             midiDevices) {
-//
-//            if (info.getDescription().equals("External MIDI Port") && info.getName().equals("midiTHRU")) {
-//                try {
-//                    device = MidiSystem.getMidiDevice(info);
-//                } catch (MidiUnavailableException e) {
-//                    System.err.println("MIDI Device was unavailable: " + e);
-//                }
-//            }
-//        }
     }
 
     List<String> getAvailableDevices() {
@@ -133,21 +106,22 @@ class MIDIOutput {
         System.err.println("Unable to open selected device");
     }
 
-    public void sendTimecode(Timecode t) {
+    public void sendTimecode(Timecode t, boolean forceFullFrame) {
         if (this.device == null || !this.device.isOpen()) {
             return;
         }
         // Update full frame every second
-        if (System.currentTimeMillis() - this.lastFullFrameTime > 5000) {
-            System.out.println("Sent Full Frame");
+        if (forceFullFrame && System.currentTimeMillis() - this.lastFullFrameTime > 20) {
             SysexMessage msg = new SysexMessage();
             try {
                 msg.setMessage(MidiTimecode.timecodeToFullFrame(t), 10);
             } catch(InvalidMidiDataException e) {
-                                                                                                    System.err.println(e);
+                System.err.println(e);
             }
             this.receiver.send(msg, -1);
             this.lastFullFrameTime = System.currentTimeMillis();
+            // Reset quarter frame count when full frame is sent.
+            this.quarterFramePieceNumber = 0;
         } else {
             // Send Quarter Frame
             if(System.currentTimeMillis() - this.lastQuarterFrameTime > (30 / 4)) {
@@ -161,14 +135,13 @@ class MIDIOutput {
                     msg.setMessage(MIDI_TIME_CODE, messageData, 0);
                 } catch (Exception e) {
                     System.err.println(e);
-                    System.exit(1);
                 }
                 this.receiver.send(msg, -1);
+                this.lastQuarterFrameTime = System.currentTimeMillis();
                 this.quarterFramePieceNumber ++;
                 if (this.quarterFramePieceNumber > 7) {
                     this.quarterFramePieceNumber = 0;
                 }
-
             }
         }
     }
@@ -186,11 +159,11 @@ class MidiTimecode {
         bytes[4] = (byte) 0x01; // Full timecode message
 
         // DYNAMIC BYTES
-        int mask = 0b0_11_00000; // Bit mask for 30 fps
+        int mask = 0b0_11_00000; // Frame rate is stored inside the hour byte, 11 = 30FPS
         bytes[5] = (byte) (t.getHours() | mask); // HR
-        bytes[6] = (byte) t.getMinutes(); // MIN
-        bytes[7] = (byte) t.getSeconds(); // SEC
-        bytes[8] = (byte) t.getFrames(); // FRAME
+        bytes[6] = (byte) t.getMinutes();        // MIN
+        bytes[7] = (byte) t.getSeconds();        // SEC
+        bytes[8] = (byte) t.getFrames();         // FRAME
 
         // STATIC BYTE
         bytes[9] = (byte) 0xF7; //EOX
@@ -201,6 +174,8 @@ class MidiTimecode {
     static byte timecodeToQuarterFrame(Timecode t, int pieceNumber) {
         // Piece number should be requested in order (0-7) unless a full frame has been sent.
         byte data;
+        // First operation either gets the least significant bytes (& 0x0F) or the most significant bytes (>> 4)
+        // Second operation inserts the frame number.
         switch (pieceNumber) {
             // FRAME lsbits
             case 0:
@@ -208,7 +183,7 @@ class MidiTimecode {
                 break;
             // FRAME msbit
             case 1:
-                data = (byte) ((t.getFrames() >> 4) | 0b0001_0000);
+                data = (byte) ((t.getFrames() >> 4)    | 0b0001_0000);
                 break;
             // SECONDS lsbits
             case 2:
@@ -216,7 +191,7 @@ class MidiTimecode {
                 break;
             // SECONDS msbits
             case 3:
-                data = (byte) ((t.getSeconds() >> 4) | 0b0011_0000);
+                data = (byte) ((t.getSeconds() >> 4)   | 0b0011_0000);
                 break;
             // MINUTES lsbits
             case 4:
@@ -224,15 +199,15 @@ class MidiTimecode {
                 break;
             // MINUTES msbits
             case 5:
-                data = (byte) ((t.getMinutes() >> 4) | 0b0101_0000);
+                data = (byte) ((t.getMinutes() >> 4)   | 0b0101_0000);
                 break;
             // HOURS lsbits
             case 6:
-                data = (byte) ((t.getHours() & 0x0F) | 0b0110_0000);
+                data = (byte) ((t.getHours() & 0x0F)   | 0b0110_0000);
                 break;
             // HOURS msbits & Framerate
             case 7:
-                data = (byte) ((t.getHours() >> 4) | 0b0111_0000);
+                data = (byte) ((t.getHours() >> 4)     | 0b0111_0110);
                 break;
             default:
                 data = 0;
