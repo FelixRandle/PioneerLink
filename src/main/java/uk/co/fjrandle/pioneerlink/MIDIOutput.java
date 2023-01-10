@@ -1,4 +1,4 @@
-package uk.co.fjrandle.app;
+package uk.co.fjrandle.pioneerlink;
 
 import org.apache.maven.shared.utils.StringUtils;
 
@@ -62,7 +62,7 @@ class MIDIOutput {
         }
     }
 
-    MIDIOutput() throws LineUnavailableException {
+    MIDIOutput() {
         MidiDevice.Info[] allDevices = MidiSystem.getMidiDeviceInfo();
 
         for (MidiDevice.Info device:

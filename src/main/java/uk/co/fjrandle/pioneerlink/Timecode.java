@@ -1,4 +1,4 @@
-package uk.co.fjrandle.app;
+package uk.co.fjrandle.pioneerlink;
 
 public class Timecode {
     private int hours, minutes, seconds, frames;

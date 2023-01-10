@@ -1,23 +1,17 @@
-package uk.co.fjrandle.app;
+package uk.co.fjrandle.pioneerlink;
 
 import com.alee.laf.WebLookAndFeel;
-import org.deepsymmetry.beatlink.DeviceUpdate;
-import org.deepsymmetry.beatlink.DeviceUpdateListener;
 import org.deepsymmetry.beatlink.data.MetadataFinder;
 import org.deepsymmetry.beatlink.data.TimeFinder;
 import org.deepsymmetry.beatlink.data.TrackMetadata;
 import org.deepsymmetry.beatlink.data.TrackPositionUpdate;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.sound.midi.MidiUnavailableException;
+import javax.sound.sampled.LineUnavailableException;
 import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
 import java.awt.*;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
 public class App {
     private static boolean debug = false;
@@ -30,7 +24,7 @@ public class App {
         }
     };
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         PioneerLink link = new PioneerLink();
         MIDIOutput midi = new MIDIOutput();
 
@@ -46,8 +40,8 @@ public class App {
 
         String[] components = new String[]{"Label.font", "Button.font", "ComboBox.font", "TabbedPane"};
 
-        for (String component:
-             components) {
+        for (String component :
+                components) {
             UIManager.put(component, new FontUIResource(new Font("Dialog", Font.PLAIN, 15)));
         }
 
@@ -63,7 +57,7 @@ public class App {
         pane.add(deviceSelector, constraints);
 
 
-        JButton deviceOpener=new JButton("Open Device");
+        JButton deviceOpener = new JButton("Open Device");
         deviceOpener.addActionListener(e -> {
             try {
                 midi.openDevice((String) deviceSelector.getSelectedItem());
@@ -97,7 +91,7 @@ public class App {
         internalTimerConstraints.gridwidth = 1;
         internalTimerConstraints.gridy = 1;
 
-        JButton play  = new JButton("PLAY");
+        JButton play = new JButton("PLAY");
         internalTimerPanel.add(play, internalTimerConstraints);
 
         JButton pause = new JButton("PAUSE");
@@ -155,10 +149,9 @@ public class App {
                 TrackMetadata metadata = MetadataFinder.getInstance().getLatestMetadataFor(deviceUpdate);
                 if (!metadata.getTitle().equals(App.currentTrack)) {
                     App.currentTrack = metadata.getTitle();
-                    System.out.println("Song changed to: "+App.currentTrack);
+                    System.out.println("Song changed to: " + App.currentTrack);
                     currentTrackLabel.setText(App.currentTrack);
                     metadata.getArtworkId();
-                    metadata.
                 }
                 TrackPositionUpdate time = TimeFinder.getInstance().getLatestPositionFor(deviceUpdate);
 
