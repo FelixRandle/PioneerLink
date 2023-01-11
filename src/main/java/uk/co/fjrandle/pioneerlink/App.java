@@ -1,6 +1,7 @@
 package uk.co.fjrandle.pioneerlink;
 
 import com.alee.laf.WebLookAndFeel;
+import com.alee.skin.dark.WebDarkSkin;
 import org.deepsymmetry.beatlink.DeviceUpdateListener;
 import org.deepsymmetry.beatlink.data.MetadataFinder;
 import org.deepsymmetry.beatlink.data.TimeFinder;
@@ -32,7 +33,7 @@ public class App {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         try {
-            UIManager.setLookAndFeel(new WebLookAndFeel());
+            WebLookAndFeel.install ( WebDarkSkin.class );
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -143,11 +144,11 @@ public class App {
 
         DeviceUpdateListener linkListener = deviceUpdate -> {
             TrackMetadata metadata = MetadataFinder.getInstance().getLatestMetadataFor(deviceUpdate);
+
             if (!metadata.getTitle().equals(App.currentTrack)) {
                 App.currentTrack = metadata.getTitle();
                 System.out.println("Song changed to: " + App.currentTrack);
                 currentTrackLabel.setText(App.currentTrack);
-                metadata.getArtworkId();
             }
             TrackPositionUpdate time = TimeFinder.getInstance().getLatestPositionFor(deviceUpdate);
 

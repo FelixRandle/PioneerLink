@@ -4,19 +4,21 @@ import org.deepsymmetry.beatlink.*;
 import org.deepsymmetry.beatlink.data.*;
 
 import java.util.Date;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 class PioneerLink {
-    private Timer debugTimer;
-    private final ScheduledExecutorService scheduler =
-            Executors.newScheduledThreadPool(1);
+    private final Timer debugTimer;
+    private Set<DeviceAnnouncement> connectedDevices;
+
     PioneerLink() {
         try {
             VirtualCdj.getInstance().start();
+            DeviceFinder.getInstance().start();
         } catch (java.net.SocketException e) {
-            System.err.println("Unable to start VirtualCdj: " + e);
+            System.err.println("Unable to start VirtualCdj or DeviceFinder: " + e);
         }
 
         try {
@@ -33,6 +35,12 @@ class PioneerLink {
 //                    System.out.println(mediaDetails.toString());
 //                }
 //            });
+
+         this.connectedDevices = DeviceFinder.getInstance().getCurrentDevices();
+
+        for (DeviceAnnouncement device:
+             this.connectedDevices) {
+        }
 
 
         VirtualCdj.getInstance().addMasterListener(new MasterListener() {
@@ -53,6 +61,7 @@ class PioneerLink {
         });
 
         this.debugTimer = new Timer();
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
         scheduler.scheduleAtFixedRate(this.debugTimer, 1, 5, TimeUnit.MILLISECONDS);
     }
 
