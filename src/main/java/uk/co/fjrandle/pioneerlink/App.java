@@ -13,6 +13,7 @@ import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
 import java.awt.*;
 import java.util.HashMap;
+import java.util.Map;
 
 public class App {
     private static String currentTrack = "";
@@ -20,7 +21,7 @@ public class App {
     private static HashMap<String, Timecode> trackList = new HashMap<String, Timecode>() {
         {
             put("Tokyo", new Timecode(3600000));
-            put("Turn On The Lights again.. (feat. Future)", new Timecode(7200000));
+            put("Freaks (Radio Edit)", new Timecode(3600000 * 3));
         }
     };
 
@@ -108,12 +109,31 @@ public class App {
         // LINK PANEL
 
         JPanel linkPanel = new JPanel();
+        linkPanel.setLayout(new GridLayout(0, 1));
         JLabel linkLabel = new JLabel("LINK");
         linkPanel.add(linkLabel);
 
         JLabel currentTrackLabel = new JLabel();
 
         linkPanel.add(currentTrackLabel);
+
+        JButton addTrack = new JButton("Add Track");
+
+        linkPanel.add(addTrack);
+
+        JPanel tracks = new JPanel();
+        tracks.setLayout(new GridLayout(0, 1));
+
+        for (Map.Entry<String, Timecode> track:
+             trackList.entrySet()) {
+            tracks.add(new TrackPanel(track.getKey(), "", track.getValue()));
+        }
+
+
+
+        linkPanel.add(new JScrollPane(tracks));
+
+
 
         // TABBING PANELS
 

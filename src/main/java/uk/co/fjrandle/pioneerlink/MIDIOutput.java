@@ -108,7 +108,7 @@ class MIDIOutput {
             return;
         }
         // Update full frame every second
-        if (forceFullFrame && System.currentTimeMillis() - this.lastFullFrameTime > 20) {
+        if (forceFullFrame || System.currentTimeMillis() - this.lastFullFrameTime > 20) {
             SysexMessage msg = new SysexMessage();
             try {
                 msg.setMessage(MidiTimecode.timecodeToFullFrame(t), 10);
@@ -122,8 +122,6 @@ class MIDIOutput {
         } else {
             // Send Quarter Frame
             if(System.currentTimeMillis() - this.lastQuarterFrameTime > (30 / 4)) {
-                System.out.println("Sent Quarter Frame # " + this.quarterFramePieceNumber);
-
                 byte messageData = MidiTimecode.timecodeToQuarterFrame(t, this.quarterFramePieceNumber);
                 ShortMessage msg = new ShortMessage();
                 try {
