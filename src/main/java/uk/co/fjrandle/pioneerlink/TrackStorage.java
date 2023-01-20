@@ -4,14 +4,22 @@ import java.io.*;
 import java.util.HashMap;
 
 public class TrackStorage {
-    void writeTracks(String fileName, HashMap<String, Timecode> tracks) throws IOException {
+    private static HashMap<String, Timecode> trackList = new HashMap<>() {
+        {
+            put("Tokyo", new Timecode(3600000));
+            put("Freaks (Radio Edit)", new Timecode(3600000 * 3));
+            put("Hello World", new Timecode(3600000 * 4));
+        }
+    };
+
+    static void saveToFile(String fileName) throws IOException {
         try {
             FileOutputStream fileOutStream
                     = new FileOutputStream(fileName);
             ObjectOutputStream trackStream
                     = new ObjectOutputStream(fileOutStream);
 
-            trackStream.writeObject(tracks);
+            trackStream.writeObject(trackList);
 
             trackStream.close();
             fileOutStream.close();
@@ -20,16 +28,27 @@ public class TrackStorage {
         }
     }
 
-    HashMap<String, Timecode> readTracks(String fileName) {
+    static void loadFromFile(String fileName) throws IOException, ClassNotFoundException {
         HashMap<String, Timecode> tracks = null;
 
         try{
-            FileInputStream fileInputStream = new FileInputStream(fileName);
-            ObjectInputStream trackInputStream = new ObjectInputStream(fileInputStream);
-            tracks = (HashMap<String, Timecode>) trackInputStream.readObject();
+            FileInputStream fileInputStream
+                    = new FileInputStream(fileName);
+            ObjectInputStream trackInputStream
+                    = new ObjectInputStream(fileInputStream);
+
+            try {
+                tracks = (HashMap<String, Timecode>) trackInputStream.readObject();
+            } catch (ClassNotFoundException e) {
+                throw e; //TODO: Custom Exception
+            }
+
+            trackInputStream.close();
+            fileInputStream.close();
+        } catch (IOException | ClassNotFoundException e) {
+            throw e; //TODO: Custom Exception
         }
 
-        return tracks;
-
+        trackList = tracks;
     }
 }
