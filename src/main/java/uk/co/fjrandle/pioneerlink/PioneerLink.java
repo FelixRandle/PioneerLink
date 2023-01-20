@@ -14,12 +14,12 @@ class PioneerLink {
     private Set<DeviceAnnouncement> connectedDevices;
 
     PioneerLink() {
-//        try {
-//            VirtualCdj.getInstance().start();
-//            DeviceFinder.getInstance().start();
-//        } catch (java.net.SocketException e) {
-//            System.err.println("Unable to start VirtualCdj or DeviceFinder: " + e);
-//        }
+        try {
+            VirtualCdj.getInstance().start();
+            DeviceFinder.getInstance().start();
+        } catch (java.net.SocketException e) {
+            System.err.println("Unable to start VirtualCdj or DeviceFinder: " + e);
+        }
 
         try {
             TimeFinder.getInstance().start();

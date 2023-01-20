@@ -69,7 +69,9 @@ class MIDIOutput {
             }
         }
 
-        selectedDevice = midiDevices.get(0);
+        if (midiDevices.size() > 0) {
+            selectedDevice = midiDevices.get(0);
+        }
     }
 
     List<String> getAvailableDevices() {

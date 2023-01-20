@@ -55,7 +55,7 @@ public class Timecode {
     @Override
     public String toString() {
         return padTime(this.getHours())+":"+padTime(this.getMinutes())+":"+
-                padTime(this.getSeconds())+":"+padTime(this.getFrames());
+                padTime(this.getSeconds())+"."+padTime(this.getFrames());
     }
 
     private String padTime(int inputString) {

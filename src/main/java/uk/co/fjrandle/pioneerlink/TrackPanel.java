@@ -3,7 +3,7 @@ package uk.co.fjrandle.pioneerlink;
 import javax.swing.*;
 import java.awt.*;
 
-public class TrackPanel extends Panel {
+public class    TrackPanel extends Panel {
     GridBagConstraints constraints;
 
     String trackName;

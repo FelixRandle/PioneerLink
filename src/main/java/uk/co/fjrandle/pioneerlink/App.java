@@ -12,6 +12,7 @@ import javax.sound.midi.MidiUnavailableException;
 import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
 import java.awt.*;
+import java.awt.event.KeyEvent;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,6 +23,7 @@ public class App {
         {
             put("Tokyo", new Timecode(3600000));
             put("Freaks (Radio Edit)", new Timecode(3600000 * 3));
+            put("Hello World", new Timecode(3600000 * 4));
         }
     };
 
@@ -33,11 +35,11 @@ public class App {
         JFrame frame = new JFrame("MIDI thing");//creating instance of JFrame
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        try {
-            WebLookAndFeel.install ( WebDarkSkin.class );
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+//        try {
+//            WebLookAndFeel.install ( WebDarkSkin.class );
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
 
         String[] components = new String[]{"Label.font", "Button.font", "ComboBox.font", "TabbedPane"};
 
@@ -129,11 +131,7 @@ public class App {
             tracks.add(new TrackPanel(track.getKey(), "", track.getValue()));
         }
 
-
-
         linkPanel.add(new JScrollPane(tracks));
-
-
 
         // TABBING PANELS
 
@@ -206,6 +204,14 @@ public class App {
         // Link listeners.
 
        link.addDebugListener(timerListener);
+    }
+
+    static void createMenuBar() {
+        JMenuBar menuBar = new JMenuBar();
+
+        JMenu trackListMenu = new JMenu("Track List");
+
+        trackListSave = new JMenuItem("")
     }
 }
 
