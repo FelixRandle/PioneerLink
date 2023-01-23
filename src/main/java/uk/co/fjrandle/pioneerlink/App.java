@@ -166,8 +166,8 @@ public class App {
 
             Timecode t = new Timecode(time.milliseconds);
 
-            if (TrackStorage.trackList.containsKey(App.currentTrack)) {
-                t.add(TrackStorage.trackList.get(App.currentTrack));
+            if (TrackStorage.asMap().containsKey(App.currentTrack)) {
+                t.add(TrackStorage.asMap().get(App.currentTrack));
             }
 
             // currently have to force full frame as partial frame isn't working?
@@ -206,7 +206,7 @@ public class App {
     static void reloadTrackList() {
         tracks.removeAll();
         for (Map.Entry<String, Timecode> track:
-                TrackStorage.trackList.entrySet()) {
+                TrackStorage.asMap().entrySet()) {
             tracks.add(new TrackPanel(track.getKey(), "", track.getValue()));
         }
     }
@@ -233,7 +233,7 @@ public class App {
                 File selectedFile = fileChooser.getSelectedFile();
                 try {
                     TrackStorage.saveToFile(selectedFile.getAbsolutePath());
-                } catch (IOException e) {
+                } catch (TrackStorage.SaveTrackFileException e) {
                     throw new RuntimeException(e);
                 }
             }
@@ -252,7 +252,7 @@ public class App {
                 try {
                     TrackStorage.loadFromFile(selectedFile.getAbsolutePath());
                     reloadTrackList();
-                } catch (IOException | ClassNotFoundException e) {
+                } catch (TrackStorage.LoadTrackFileException e) {
                     throw new RuntimeException(e);
                 }
             }
