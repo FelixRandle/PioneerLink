@@ -4,11 +4,11 @@ import java.io.*;
 import java.util.HashMap;
 
 public class TrackStorage {
-    private static HashMap<String, Timecode> trackList = new HashMap<>() {
+    public static HashMap<String, Timecode> trackList = new HashMap<>() {
         {
             put("Tokyo", new Timecode(3600000));
-            put("Freaks (Radio Edit)", new Timecode(3600000 * 3));
-            put("Hello World", new Timecode(3600000 * 4));
+            put("Freaks (Radio Et)", new Timecode(3600000 * 3));
+            put("Hello World", new Timecode(3600000 * 5));
         }
     };
 

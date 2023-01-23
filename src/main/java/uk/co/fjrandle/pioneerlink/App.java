@@ -12,20 +12,17 @@ import javax.sound.midi.MidiUnavailableException;
 import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 public class App {
     private static String currentTrack = "";
-
-    private static HashMap<String, Timecode> trackList = new HashMap<String, Timecode>() {
-        {
-            put("Tokyo", new Timecode(3600000));
-            put("Freaks (Radio Edit)", new Timecode(3600000 * 3));
-            put("Hello World", new Timecode(3600000 * 4));
-        }
-    };
+    private static JPanel tracks;
 
     public static void main(String[] args) {
         PioneerLink link = new PioneerLink();
@@ -123,13 +120,10 @@ public class App {
 
         linkPanel.add(addTrack);
 
-        JPanel tracks = new JPanel();
+        tracks = new JPanel();
         tracks.setLayout(new GridLayout(0, 1));
 
-        for (Map.Entry<String, Timecode> track:
-             trackList.entrySet()) {
-            tracks.add(new TrackPanel(track.getKey(), "", track.getValue()));
-        }
+        reloadTrackList();
 
         linkPanel.add(new JScrollPane(tracks));
 
@@ -172,10 +166,11 @@ public class App {
 
             Timecode t = new Timecode(time.milliseconds);
 
-            if (App.trackList.containsKey(App.currentTrack)) {
-                t.add(App.trackList.get(App.currentTrack));
+            if (TrackStorage.trackList.containsKey(App.currentTrack)) {
+                t.add(TrackStorage.trackList.get(App.currentTrack));
             }
 
+            // currently have to force full frame as partial frame isn't working?
             midi.sendTimecode(t, true); //TODO: Force update when DJ is doing weird shit
         };
 
@@ -198,6 +193,8 @@ public class App {
             }
         });
 
+        createMenuBar(frame);
+
         frame.pack();
         frame.setVisible(true);
 
@@ -206,12 +203,66 @@ public class App {
        link.addDebugListener(timerListener);
     }
 
-    static void createMenuBar() {
+    static void reloadTrackList() {
+        tracks.removeAll();
+        for (Map.Entry<String, Timecode> track:
+                TrackStorage.trackList.entrySet()) {
+            tracks.add(new TrackPanel(track.getKey(), "", track.getValue()));
+        }
+    }
+
+    static void createMenuBar(JFrame frame) {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+
         JMenuBar menuBar = new JMenuBar();
 
         JMenu trackListMenu = new JMenu("Track List");
 
-        trackListSave = new JMenuItem("")
+        trackListMenu.setMnemonic(KeyEvent.VK_T);
+
+        JMenuItem trackListSave = new JMenuItem("Save TrackList", KeyEvent.VK_S);
+        trackListSave.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK));
+
+        trackListMenu.add(trackListSave);
+
+        trackListSave.addActionListener(actionEvent -> {
+            int result = fileChooser.showOpenDialog(frame);
+
+            if (result == JFileChooser.APPROVE_OPTION) {
+                File selectedFile = fileChooser.getSelectedFile();
+                try {
+                    TrackStorage.saveToFile(selectedFile.getAbsolutePath());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+
+        JMenuItem trackListLoad = new JMenuItem("Load TrackList", KeyEvent.VK_L);
+        trackListLoad.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, InputEvent.CTRL_DOWN_MASK));
+
+        trackListMenu.add(trackListLoad);
+
+        trackListLoad.addActionListener(actionEvent -> {
+            int result = fileChooser.showOpenDialog(frame);
+
+            if (result == JFileChooser.APPROVE_OPTION) {
+                File selectedFile = fileChooser.getSelectedFile();
+                try {
+                    TrackStorage.loadFromFile(selectedFile.getAbsolutePath());
+                    reloadTrackList();
+                } catch (IOException | ClassNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+
+
+
+        menuBar.add(trackListMenu);
+
+        frame.setJMenuBar(menuBar);
     }
 }
 

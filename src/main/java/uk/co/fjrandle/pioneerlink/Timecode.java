@@ -1,6 +1,8 @@
 package uk.co.fjrandle.pioneerlink;
 
-public class Timecode {
+import java.io.Serializable;
+
+public class Timecode implements Serializable {
     private int hours, minutes, seconds, frames;
     private long millis;
 
