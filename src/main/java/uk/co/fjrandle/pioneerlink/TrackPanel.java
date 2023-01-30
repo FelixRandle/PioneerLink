@@ -3,10 +3,12 @@ package uk.co.fjrandle.pioneerlink;
 import javax.swing.*;
 import java.awt.*;
 
-public class    TrackPanel extends Panel {
+public class TrackPanel extends Panel {
     GridBagConstraints constraints;
 
-    String trackName;
+    JTextField trackNameInput = new JTextField("");
+
+    String trackName = trackNameInput.getText();
     String artistName;
     Timecode offset;
 
@@ -15,7 +17,6 @@ public class    TrackPanel extends Panel {
     }
 
     public TrackPanel(String trackName, String artistName, Timecode offset) {
-        this.trackName = trackName;
         this.artistName = artistName;
         this.offset = offset;
 
@@ -23,9 +24,13 @@ public class    TrackPanel extends Panel {
 
         this.constraints = new GridBagConstraints();
 
-        this.add(new JTextField(this.trackName));
+        this.add(trackNameInput);
 
         this.add(new JLabel(this.offset.toString()));
 
+    }
+
+    public String getTrack() {
+        return this.trackName;
     }
 }

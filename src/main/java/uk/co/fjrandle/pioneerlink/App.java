@@ -28,7 +28,6 @@ public class App {
         PioneerLink link = new PioneerLink();
         MIDIOutput midi = new MIDIOutput();
 
-        System.out.println(midi.getAvailableDevices());
         JFrame frame = new JFrame("MIDI thing");//creating instance of JFrame
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -155,14 +154,24 @@ public class App {
         pane.add(tabs, constraints);
 
         DeviceUpdateListener linkListener = deviceUpdate -> {
-            TrackMetadata metadata = MetadataFinder.getInstance().getLatestMetadataFor(deviceUpdate);
-
+            TrackMetadata metadata = null;
+            try {
+                metadata = MetadataFinder.getInstance().getLatestMetadataFor(deviceUpdate);
+            } catch(IllegalStateException e) {
+                System.out.println(e);
+            }
+            if (metadata == null) {
+                return;
+            }
+            //TODO:FIX HERE
             if (!metadata.getTitle().equals(App.currentTrack)) {
                 App.currentTrack = metadata.getTitle();
                 System.out.println("Song changed to: " + App.currentTrack);
                 currentTrackLabel.setText(App.currentTrack);
             }
             TrackPositionUpdate time = TimeFinder.getInstance().getLatestPositionFor(deviceUpdate);
+
+            System.out.println(time.milliseconds);
 
             Timecode t = new Timecode(time.milliseconds);
 
@@ -171,7 +180,7 @@ public class App {
             }
 
             // currently have to force full frame as partial frame isn't working?
-            midi.sendTimecode(t, true); //TODO: Force update when DJ is doing weird shit
+            //midi.sendTimecode(t, true); //TODO: Force update when DJ is doing weird shit
         };
 
         DebugListener timerListener = millis -> {

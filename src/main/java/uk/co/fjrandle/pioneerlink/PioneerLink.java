@@ -15,8 +15,8 @@ class PioneerLink {
 
     PioneerLink() {
         try {
-            VirtualCdj.getInstance().start();
             DeviceFinder.getInstance().start();
+            VirtualCdj.getInstance().start();
         } catch (java.net.SocketException e) {
             System.err.println("Unable to start VirtualCdj or DeviceFinder: " + e);
         }
@@ -24,25 +24,25 @@ class PioneerLink {
         try {
             TimeFinder.getInstance().start();
             MetadataFinder.getInstance().start();
+
             CrateDigger.getInstance().start();
         } catch (Exception e) {
             System.err.println("Unable to start finders:" + e);
         }
 
-//            VirtualCdj.getInstance().addMediaDetailsListener(new MediaDetailsListener() {
-//                @Override
-//                public void detailsAvailable(MediaDetails mediaDetails) {
-//                    System.out.println(mediaDetails.toString());
-//                }
-//            });
+//        VirtualCdj.getInstance().addMediaDetailsListener(new MediaDetailsListener() {
+//            @Override
+//            public void detailsAvailable(MediaDetails mediaDetails) {
+//                System.out.println(mediaDetails.toString());
+//            }
+//        });
 
-         this.connectedDevices = DeviceFinder.getInstance().getCurrentDevices();
+        this.connectedDevices = DeviceFinder.getInstance().getCurrentDevices();
 
         for (DeviceAnnouncement device:
              this.connectedDevices) {
             System.out.println(device);
         }
-
 
         VirtualCdj.getInstance().addMasterListener(new MasterListener() {
             @Override

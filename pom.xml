@@ -7,38 +7,11 @@
     <version>0.1</version>
 
     <properties>
-        <maven.compiler.source>1.19</maven.compiler.source>
-        <maven.compiler.target>1.19</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>org.deepsymmetry</groupId>
-            <artifactId>electro</artifactId>
-            <version>0.1.4</version>
-        </dependency>
-        <dependency>
-            <groupId>org.deepsymmetry</groupId>
-            <artifactId>crate-digger</artifactId>
-            <version>0.1.6</version>
-        </dependency>
-        <!-- Kaitai Struct Compiler runtime for Java, since we refer to parts of it directly -->
-        <dependency>
-            <groupId>io.kaitai</groupId>
-            <artifactId>kaitai-struct-runtime</artifactId>
-            <version>0.9</version>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.13.2</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.googlecode.concurrentlinkedhashmap</groupId>
-            <artifactId>concurrentlinkedhashmap-lru</artifactId>
-            <version>1.4.2</version>
-        </dependency>
         <dependency>
             <groupId>org.deepsymmetry</groupId>
             <artifactId>beat-link</artifactId>
