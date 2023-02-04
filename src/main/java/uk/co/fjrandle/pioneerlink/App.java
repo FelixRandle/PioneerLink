@@ -3,22 +3,28 @@ package uk.co.fjrandle.pioneerlink;
 import com.alee.laf.WebLookAndFeel;
 import com.alee.skin.dark.WebDarkSkin;
 import org.deepsymmetry.beatlink.DeviceUpdateListener;
-import org.deepsymmetry.beatlink.data.MetadataFinder;
-import org.deepsymmetry.beatlink.data.TimeFinder;
-import org.deepsymmetry.beatlink.data.TrackMetadata;
-import org.deepsymmetry.beatlink.data.TrackPositionUpdate;
+import org.deepsymmetry.beatlink.data.*;
 
 import javax.sound.midi.MidiUnavailableException;
+import javax.sound.midi.Track;
 import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.plaf.FontUIResource;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+//TODO:
+// Timecode input
+// IMPROVE: Show current track position https://deepsymmetry.org/beatlink/apidocs/org/deepsymmetry/beatlink/data/WaveformPreview.html
+// Show timecode being output
 
 public class App {
     private static String currentTrack = "";
@@ -108,14 +114,30 @@ public class App {
 
         JPanel linkPanel = new JPanel();
         linkPanel.setLayout(new GridLayout(0, 1));
-        JLabel linkLabel = new JLabel("LINK");
-        linkPanel.add(linkLabel);
+
+        WaveformPreviewComponent preview = new WaveformPreviewComponent(1);
+        preview.setEmphasisColor(new Color(25, 50, 255));
+        preview.setFetchSongStructures(true);
+        preview.setMonitoredPlayer(0);
+        linkPanel.add(preview);
+
+        JLabel currentOutput = new JLabel((new Timecode(0)).toString());
+
+        linkPanel.add(currentOutput);
 
         JLabel currentTrackLabel = new JLabel();
 
         linkPanel.add(currentTrackLabel);
 
         JButton addTrack = new JButton("Add Track");
+        addTrack.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                TrackStorage.put("TRACK NAME", new Timecode(0));
+                reloadTrackList();
+                frame.repaint();
+            }
+        });
 
         linkPanel.add(addTrack);
 
@@ -163,24 +185,32 @@ public class App {
             if (metadata == null) {
                 return;
             }
-            //TODO:FIX HERE
             if (!metadata.getTitle().equals(App.currentTrack)) {
                 App.currentTrack = metadata.getTitle();
-                System.out.println("Song changed to: " + App.currentTrack);
                 currentTrackLabel.setText(App.currentTrack);
+
+                if (TrackStorage.asMap().containsKey(App.currentTrack)) {
+                    preview.setMonitoredPlayer(deviceUpdate.getDeviceNumber());
+                } else {
+                    preview.setMonitoredPlayer(0);
+                }
             }
+
             TrackPositionUpdate time = TimeFinder.getInstance().getLatestPositionFor(deviceUpdate);
 
-            System.out.println(time.milliseconds);
+            if (time != null) {
+                Timecode t = new Timecode(time.milliseconds);
 
-            Timecode t = new Timecode(time.milliseconds);
+                if (TrackStorage.asMap().containsKey(App.currentTrack)) {
+                    t.add(TrackStorage.asMap().get(App.currentTrack));
 
-            if (TrackStorage.asMap().containsKey(App.currentTrack)) {
-                t.add(TrackStorage.asMap().get(App.currentTrack));
+                }
+
+                currentOutput.setText(t.toString());
+
+                // currently have to force full frame as partial frame isn't working?
+                midi.sendTimecode(t, true); //TODO: Force update when DJ is doing weird shit
             }
-
-            // currently have to force full frame as partial frame isn't working?
-            //midi.sendTimecode(t, true); //TODO: Force update when DJ is doing weird shit
         };
 
         DebugListener timerListener = millis -> {
@@ -214,15 +244,16 @@ public class App {
 
     static void reloadTrackList() {
         tracks.removeAll();
-        for (Map.Entry<String, Timecode> track:
-                TrackStorage.asMap().entrySet()) {
-            tracks.add(new TrackPanel(track.getKey(), "", track.getValue()));
+        for (TrackPanel panel: TrackStorage.getTrackPanels()) {
+            tracks.add(panel);
         }
     }
 
     static void createMenuBar(JFrame frame) {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("Track List", "trks");
+        fileChooser.setFileFilter(filter);
 
         JMenuBar menuBar = new JMenuBar();
 
@@ -236,10 +267,13 @@ public class App {
         trackListMenu.add(trackListSave);
 
         trackListSave.addActionListener(actionEvent -> {
-            int result = fileChooser.showOpenDialog(frame);
+            int result = fileChooser.showSaveDialog(frame);
 
             if (result == JFileChooser.APPROVE_OPTION) {
                 File selectedFile = fileChooser.getSelectedFile();
+                if(!selectedFile.getAbsolutePath().endsWith(".trks")) {
+                    selectedFile = new File(selectedFile.getAbsolutePath()+ ".trks");
+                }
                 try {
                     TrackStorage.saveToFile(selectedFile.getAbsolutePath());
                 } catch (TrackStorage.SaveTrackFileException e) {
@@ -259,8 +293,11 @@ public class App {
             if (result == JFileChooser.APPROVE_OPTION) {
                 File selectedFile = fileChooser.getSelectedFile();
                 try {
+                    TrackStorage.clear();
                     TrackStorage.loadFromFile(selectedFile.getAbsolutePath());
                     reloadTrackList();
+
+                    frame.repaint();
                 } catch (TrackStorage.LoadTrackFileException e) {
                     throw new RuntimeException(e);
                 }

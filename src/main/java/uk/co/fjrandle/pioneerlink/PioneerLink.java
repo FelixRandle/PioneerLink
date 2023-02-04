@@ -16,54 +16,65 @@ class PioneerLink {
     PioneerLink() {
         try {
             DeviceFinder.getInstance().start();
+
             VirtualCdj.getInstance().start();
         } catch (java.net.SocketException e) {
             System.err.println("Unable to start VirtualCdj or DeviceFinder: " + e);
         }
-
-        try {
-            TimeFinder.getInstance().start();
-            MetadataFinder.getInstance().start();
-
-            CrateDigger.getInstance().start();
-        } catch (Exception e) {
-            System.err.println("Unable to start finders:" + e);
-        }
-
-//        VirtualCdj.getInstance().addMediaDetailsListener(new MediaDetailsListener() {
-//            @Override
-//            public void detailsAvailable(MediaDetails mediaDetails) {
-//                System.out.println(mediaDetails.toString());
-//            }
-//        });
-
-        this.connectedDevices = DeviceFinder.getInstance().getCurrentDevices();
-
-        for (DeviceAnnouncement device:
-             this.connectedDevices) {
-            System.out.println(device);
-        }
-
-        VirtualCdj.getInstance().addMasterListener(new MasterListener() {
-            @Override
-            public void masterChanged(DeviceUpdate update) {
-                System.out.println("Master changed at " + new Date() + ": " + update);
+        if (VirtualCdj.getInstance().isRunning()) {
+            try {
+                CrateDigger.getInstance().start();
+                TimeFinder.getInstance().start();
+                MetadataFinder.getInstance().start();
+                AnalysisTagFinder.getInstance().start();
+            } catch (Exception e) {
+                System.err.println("Unable to start finders:" + e);
             }
 
-            @Override
-            public void tempoChanged(double tempo) {
+            VirtualCdj.getInstance().addMediaDetailsListener(new MediaDetailsListener() {
+                @Override
+                public void detailsAvailable(MediaDetails mediaDetails) {
+                    System.out.println(mediaDetails.toString());
+                }
+            });
+
+            this.connectedDevices = DeviceFinder.getInstance().getCurrentDevices();
+
+            for (DeviceAnnouncement device :
+                    this.connectedDevices) {
+                System.out.println(device);
+            }
+
+            VirtualCdj.getInstance().addMasterListener(new MasterListener() {
+                @Override
+                public void masterChanged(DeviceUpdate update) {
+                    System.out.println("Master changed at " + new Date() + ": " + update);
+                }
+
+                @Override
+                public void tempoChanged(double tempo) {
 //                System.out.println("Tempo changed at " + new Date() + ": " + tempo);
-            }
+                }
 
-            @Override
-            public void newBeat(Beat beat) {
+                @Override
+                public void newBeat(Beat beat) {
 //                System.out.println("Master player beat at " + new Date() + ": " + beat);
-            }
-        });
+                }
+            });
+        }
 
         this.debugTimer = new Timer();
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
         scheduler.scheduleAtFixedRate(this.debugTimer, 1, 5, TimeUnit.MILLISECONDS);
+
+//        TimeFinder.getInstance().addTrackPositionListener(1, new TrackPositionListener() {
+//            @Override
+//            public void movementChanged(TrackPositionUpdate update) {
+//                if (update != null) {
+//                    System.out.println("TF: " + update.milliseconds);
+//                }
+//            }
+//        });
     }
 
     public void addTrackListener(DeviceUpdateListener listener) {

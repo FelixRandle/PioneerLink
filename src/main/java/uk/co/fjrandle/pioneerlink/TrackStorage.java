@@ -1,30 +1,38 @@
 package uk.co.fjrandle.pioneerlink;
 
 import java.io.*;
-import java.util.HashMap;
+import java.util.*;
 
-@SuppressWarnings("unused")
 public class TrackStorage {
-    private static HashMap<String, Timecode> trackList = new HashMap<>();
+    private static List<TrackPanel> trackPanels = new ArrayList<TrackPanel>();
 
-    static HashMap<String, Timecode> asMap() {
+    public static HashMap<String, Timecode> asMap() {
+        HashMap<String, Timecode> trackList = new HashMap<>();
+
+        for (TrackPanel panel:
+             TrackStorage.trackPanels) {
+            trackList.put(panel.getTrackName(), panel.getOffset());
+        }
         return trackList;
     }
 
-    static void put(String trackName, Timecode timecode) {
-        trackList.put(trackName, timecode);
+    static List<TrackPanel> getTrackPanels() { return trackPanels; }
+
+    static void put(String trackName, Timecode offset) {
+        trackPanels.add(new TrackPanel(trackName, offset));
     }
 
     static void remove(String trackName) {
-        trackList.remove(trackName);
+        Optional<TrackPanel> trackPanel = trackPanels.stream().filter(panel -> panel.getTrackName().equals(trackName)).findFirst();
+        trackPanel.ifPresent(panel -> trackPanels.remove(panel));
     }
 
     static void clear() {
-        trackList.clear();
+        trackPanels.clear();
     }
 
-    static void get(String trackName) {
-        trackList.get(trackName);
+    static Optional<TrackPanel> get(String trackName) {
+        return trackPanels.stream().filter(panel -> panel.getTrackName().equals(trackName)).findFirst();
     }
 
     static void saveToFile(String fileName) throws SaveTrackFileException {
@@ -34,7 +42,7 @@ public class TrackStorage {
             ObjectOutputStream trackStream
                     = new ObjectOutputStream(fileOutStream);
 
-            trackStream.writeObject(trackList);
+            trackStream.writeObject(asMap());
 
             trackStream.close();
             fileOutStream.close();
@@ -62,7 +70,9 @@ public class TrackStorage {
             throw new LoadTrackFileException(e.getMessage());
         }
 
-        trackList = tracks;
+        for (Map.Entry<String, Timecode> track : tracks.entrySet()) {
+            put(track.getKey(), track.getValue());
+        }
     }
 
     static class SaveTrackFileException extends Exception {

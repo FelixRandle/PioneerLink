@@ -13,10 +13,23 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>2.0.6</version>
+        </dependency>
+        <dependency>
             <groupId>org.deepsymmetry</groupId>
             <artifactId>beat-link</artifactId>
-            <version>7.0.1</version>
+            <version>7.0.0</version>
         </dependency>
+        <!-- temporary, this is a dependency of beat-link so should be installed magically without the need for this.-->
+        <!-- https://mvnrepository.com/artifact/org.acplt/oncrpc -->
+        <dependency>
+            <groupId>org.acplt</groupId>
+            <artifactId>oncrpc</artifactId>
+            <version>1.0.7</version>
+        </dependency>
+
         <dependency>
             <groupId>com.weblookandfeel</groupId>
             <artifactId>weblaf-ui</artifactId>
