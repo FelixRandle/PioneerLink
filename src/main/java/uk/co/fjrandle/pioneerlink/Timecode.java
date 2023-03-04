@@ -10,6 +10,10 @@ public class Timecode implements Serializable {
         this.setTimeFromMillis(millis);
     }
 
+    Timecode(long hours, long minutes, long seconds) {
+        this.setTimeFromMillis((seconds + (minutes * 60) + (hours * 3600)) * 1000);
+    }
+
     public void setTimeFromMillis(long millis) {
         this.millis = millis;
         this.hours = (int) (millis / (1000 * 60 * 60)) % 24;
